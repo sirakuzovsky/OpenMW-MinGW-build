@@ -1,0 +1,182 @@
+# Maintainer: Alexey Pavlov <alexpux@gmail.com>
+
+# mingw logic lives in gcc.jam, so we always need to use the 'gcc' toolset
+_toolset=gcc
+
+_realname=boost
+pkgbase=mingw-w64-${_realname}
+pkgname="${MINGW_PACKAGE_PREFIX}-${_realname}"
+pkgver=1.80.0
+_boostver=${pkgver//./_}
+pkgrel=1
+pkgdesc="Free peer-reviewed portable C++ source libraries (mingw-w64)"
+arch=('any')
+mingw_arch=('mingw32' 'mingw64' 'ucrt64' 'clang64' 'clang32' 'clangarm64')
+url="https://www.boost.org/"
+license=('custom')
+depends=("${MINGW_PACKAGE_PREFIX}-gcc-libs"
+         "${MINGW_PACKAGE_PREFIX}-bzip2"
+         "${MINGW_PACKAGE_PREFIX}-icu"
+         "${MINGW_PACKAGE_PREFIX}-xz"
+         "${MINGW_PACKAGE_PREFIX}-zstd"
+         "${MINGW_PACKAGE_PREFIX}-zlib")
+optdepends=("${MINGW_PACKAGE_PREFIX}-python: For Boost.Python"
+            "${MINGW_PACKAGE_PREFIX}-python-numpy: For Boost.Python (NumPy)")
+makedepends=("${MINGW_PACKAGE_PREFIX}-python"
+             "${MINGW_PACKAGE_PREFIX}-python-numpy"
+             "${MINGW_PACKAGE_PREFIX}-cc"
+             "lndir")
+options=('strip' 'buildflags' 'staticlibs')
+source=(https://boostorg.jfrog.io/artifactory/main/release/${pkgver}/source/boost_${_boostver}.tar.bz2
+        boost-1.63.0-python-test-PyImport_AppendInittab.patch
+        boost-1.57.0-build-optflags.patch
+        boost-1.68.0-pool-test_linking.patch
+        boost-1.57.0-python-abi_letters.patch
+        boost-1.57.0-python-libpython_dep.patch
+        boost-1.70.0-fix-python-install.patch
+        using-mingw-w64-python.patch
+        msys2-mingw-folders-bootstrap.patch)
+sha256sums=('1e19565d82e43bc59209a168f5ac899d3ba471d55c7610c677d4ccf2c9c500c0'
+            'b22196b6415f5e1c0fe56b49a12ea7c20073b15a5f31907f363c7be38d70d628'
+            'e322e7de83d92b80ebfba023127cbe05a18672234b09df9319767472401e01cc'
+            'c84cbb02321b4df379769f3a3cd03c38c76bdb13abaa3d3f04264ed37c99f2c7'
+            'cf46e9b791b45937d5af26b0f35dcdfa416cd9b62ef6c29e3064464835634628'
+            '01758929643f92530512230d37df9793e6481cd6ce6310e3a79cee5ba287858c'
+            '5e5fc9e04482903e1a0e7c6c4e81b57448b8dc86c707d1436d69ddc5010219ff'
+            '5c38e08ba63695afa79a29d5d3ea22ef1ecf79f91d48ae922e1a489e83782742'
+            '5117629ee577de0da800b6923675683ba69422cdbe958e70c9081fdc6886402e')
+
+# Helper macros to help make tasks easier #
+apply_patch_with_msg() {
+  for _patch in "$@"
+  do
+    msg2 "Applying ${_patch}"
+    patch -Nbp1 -i "${srcdir}/${_patch}"
+  done
+}
+
+prepare() {
+  cd "${srcdir}/boost_${_boostver}"
+
+  # https://svn.boost.org/trac/boost/ticket/9038
+  apply_patch_with_msg \
+    boost-1.68.0-pool-test_linking.patch
+
+  # https://bugzilla.redhat.com/show_bug.cgi?id=1102667
+  apply_patch_with_msg \
+    boost-1.57.0-python-libpython_dep.patch \
+    boost-1.57.0-python-abi_letters.patch \
+    boost-1.63.0-python-test-PyImport_AppendInittab.patch
+
+  # https://bugzilla.redhat.com/show_bug.cgi?id=1190039
+  apply_patch_with_msg \
+    boost-1.57.0-build-optflags.patch
+
+  # Use our own build Python
+  apply_patch_with_msg \
+    using-mingw-w64-python.patch
+
+  apply_patch_with_msg \
+    msys2-mingw-folders-bootstrap.patch
+
+  # Fix installation of both Python versions
+  apply_patch_with_msg \
+    boost-1.70.0-fix-python-install.patch
+}
+
+setb2args() {
+    case ${CARCH} in
+    i686|armv7)
+      local _model=32
+      ;;
+    x86_64|aarch64)
+      local _model=64
+      ;;
+    esac
+
+    if check_option "debug" "y"; then
+        local variant=debug
+    else
+        local variant=release
+    fi
+
+    b2args="address-model=${_model} \
+    link=shared,static \
+    pch=off \
+    runtime-link=shared \
+    threading=multi \
+    threadapi=win32 \
+    toolset=$_toolset \
+    variant=${variant} \
+    python=${_pyver} \
+    --debug-configuration \
+    --prefix=${pkgdir}${MINGW_PREFIX} \
+    --layout=tagged-1.66 \
+    --no-cmake-config \
+    -sHAVE_ICU=1 \
+    -sICU_PATH=${MINGW_PREFIX} \
+    -sICU_ICUUC_NAME=icuuc \
+    -sICU_ICUDT_NAME=icudt \
+    -sICU_ICUIN_NAME=icuin \
+    -sICONV_PATH=${MINGW_PREFIX} \
+    -sICONV_LINK=\"-L${MINGW_PREFIX}/lib -liconv\" \
+    -sNO_BZIP2 \
+    -sBZIP2_BINARY=bz2 \
+    -sBZIP2_INCLUDE=${MINGW_PREFIX}/include \
+    -sBZIP2_LIBPATH=${MINGW_PREFIX}/lib \
+    -sNO_ZLIB \
+    -sZLIB_BINARY=z \
+    -sZLIB_INCLUDE=${MINGW_PREFIX}/include \
+    -sZLIB_LIBPATH=${MINGW_PREFIX}/lib \
+    -d2 \
+    -q"
+    if [[ "${CARCH}" == "aarch64" ]]; then
+      # boost context does not yet have an implementation for Windows ARM64
+      # coroutine and fiber depend on context
+      b2args+=" --without-context --without-coroutine --without-fiber"
+    fi
+}
+
+build() {
+  local PREFIX_DEPS=$(cygpath -am ${MINGW_PREFIX})
+
+  [[ -d ${srcdir}/build-${MSYSTEM} ]] && rm -rf ${srcdir}/build-${MSYSTEM}
+  mkdir -p "${srcdir}/build-${MSYSTEM}"
+  lndir "${srcdir}/boost_${_boostver}" "${srcdir}/build-${MSYSTEM}"
+
+  cd "${srcdir}/build-${MSYSTEM}"
+
+  local _pyver=$(${MINGW_PREFIX}/bin/python -c "import sys;sys.stdout.write('.'.join(map(str, sys.version_info[:2])))")
+
+  echo "using python : ${_pyver} : ${PREFIX_DEPS}/bin/python.exe : ${PREFIX_DEPS}/include/python${_pyver} : ${PREFIX_DEPS}/lib/python${_pyver}/config-${_pyver} ;" >> ./tools/build/src/user-config.jam
+  # configure b2 to use c++ rather than g++, as the latter no longer exists in
+  # clang prefixes
+  echo "using gcc : : ${PREFIX_DEPS}/bin/c++.exe ;" >> ./tools/build/src/user-config.jam
+
+  ./tools/build/src/engine/build.sh --cxx="${CXX}" gcc
+  cp ./tools/build/src/engine/b2 .
+
+  ./bootstrap.sh --with-icu=${MINGW_PREFIX} --with-python=${MINGW_PREFIX} --with-toolset=$_toolset --with-bjam="$(pwd)/b2"
+
+  setb2args
+  ./b2 $b2args -j$(nproc) \
+    cflags="$CFLAGS" \
+    cxxflags="$CXXFLAGS -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-unused-command-line-argument" \
+    linkflags="$LDFLAGS"
+}
+
+package() {
+  cd "${srcdir}/build-${MSYSTEM}"
+
+  local _pyver=$(${MINGW_PREFIX}/bin/python -c "import sys;sys.stdout.write('.'.join(map(str, sys.version_info[:2])))")
+
+  setb2args
+  ./b2 $b2args install
+
+  mkdir -p ${pkgdir}${MINGW_PREFIX}/bin
+  mv ${pkgdir}${MINGW_PREFIX}/lib/*.dll ${pkgdir}${MINGW_PREFIX}/bin
+
+  # install b2 and bjam
+  install -Dm755 b2.exe "${pkgdir}${MINGW_PREFIX}"/bin/b2.exe
+  cp -rf "${pkgdir}${MINGW_PREFIX}"/bin/b2.exe "${pkgdir}${MINGW_PREFIX}"/bin/bjam.exe
+}

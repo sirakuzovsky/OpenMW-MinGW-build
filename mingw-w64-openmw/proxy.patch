@@ -1,0 +1,14 @@
+diff --git a/CI/before_script.msvc.sh b/CI/before_script.msvc.sh
+index 57e31c789..54059d9df 100644
+--- a/CI/before_script.msvc.sh
++++ b/CI/before_script.msvc.sh
+@@ -917,7 +917,8 @@ printf "Qt ${QT_VER}... "
+ 		mkdir Qt
+ 		cd Qt
+ 
+-		run_cmd "${DEPS}/aqt-venv/${VENV_BIN_DIR}/aqt" install ${QT_VER} windows desktop "win${BITS}_msvc${QT_MSVC_YEAR}${SUFFIX}"
++ 		run_cmd "${DEPS}/aqt-venv/${VENV_BIN_DIR}/aqt" install ${QT_VER} windows desktop "win${BITS}_msvc${QT_MSVC_YEAR}${SUFFIX} -b http://ftp1.nluug.nl/languages/qt"
++
+ 
+ 		printf "  Cleaning up extraneous data... "
+ 		rm -rf Qt/{aqtinstall.log,Tools}

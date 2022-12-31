@@ -1,0 +1,120 @@
+_realname=openmw
+pkgbase=mingw-w64-${_realname}
+pkgname="${MINGW_PACKAGE_PREFIX}-${_realname}"
+pkgver=0.49.0
+pkgrel=1
+pkgdesc="OpenMW is a free, open source, and modern engine which re-implements and extends the 2002 Gamebryo engine for the open-world role-playing game The Elder Scrolls III: Morrowind. (mingw-w64)"
+arch=('any')
+#mingw_arch=('mingw32' 'mingw64' 'ucrt64' 'clang64' 'clang32' 'clangarm64')
+mingw_arch=('mingw64')
+url="https://openmw.org/"
+license=('GNU General Public License version 3')
+depends=("${MINGW_PACKAGE_PREFIX}-boost"
+	 "${MINGW_PACKAGE_PREFIX}-OpenSceneGraph"
+         "${MINGW_PACKAGE_PREFIX}-bullet"
+         "${MINGW_PACKAGE_PREFIX}-mygui"
+	 "base"
+	 "base-devel"
+	 "boost-libs" 
+	 "cmake" 
+	 "filesystem"
+	 "jsoncpp"
+	 "jsoncpp-devel"
+	 "mingw-w64-clang-x86_64-opencl-headers"
+	 "mingw-w64-ucrt-x86_64-icu"
+	 "${MINGW_PACKAGE_PREFIX}-7zip"
+	 "${MINGW_PACKAGE_PREFIX}-OpenSceneGraph"
+	 "${MINGW_PACKAGE_PREFIX}-SDL2"
+	 "${MINGW_PACKAGE_PREFIX}-binutils"
+	 "${MINGW_PACKAGE_PREFIX}-cmake"
+	 "${MINGW_PACKAGE_PREFIX}-collada-dom"
+	 "${MINGW_PACKAGE_PREFIX}-crt-git"
+	 "${MINGW_PACKAGE_PREFIX}-doxygen"
+	 "${MINGW_PACKAGE_PREFIX}-ffmpeg"
+	 "${MINGW_PACKAGE_PREFIX}-freetype"
+	 "${MINGW_PACKAGE_PREFIX}-gcc"
+	 "${MINGW_PACKAGE_PREFIX}-gdb"
+	 "${MINGW_PACKAGE_PREFIX}-gdb-multiarch"
+	 "${MINGW_PACKAGE_PREFIX}-headers-git"
+	 "${MINGW_PACKAGE_PREFIX}-libgccjit"
+	 "${MINGW_PACKAGE_PREFIX}-libjpeg-turbo"
+	 "${MINGW_PACKAGE_PREFIX}-libmangle-git"
+	 "${MINGW_PACKAGE_PREFIX}-luajit"
+	 "${MINGW_PACKAGE_PREFIX}-make"
+	 "${MINGW_PACKAGE_PREFIX}-mesa"
+	 "${MINGW_PACKAGE_PREFIX}-nvidia-cg-toolkit"
+	 "${MINGW_PACKAGE_PREFIX}-pkgconf"
+	 "${MINGW_PACKAGE_PREFIX}-python-pip"
+	 "${MINGW_PACKAGE_PREFIX}-python-pyglet"
+	 "${MINGW_PACKAGE_PREFIX}-qt-creator"
+	 "${MINGW_PACKAGE_PREFIX}-qt5-base"
+	 "${MINGW_PACKAGE_PREFIX}-tools-git"
+	 "${MINGW_PACKAGE_PREFIX}-winpthreads-git"
+	 "${MINGW_PACKAGE_PREFIX}-winstorecompat-git"
+	 "msys2-runtime"
+	 "ninja"
+	 "python" 
+	 "python-pip"
+)
+optdepends=()
+makedepends=()
+options=()
+source=(https://github.com/OpenMW/openmw/archive/refs/heads/master.zip
+	proxy.patch
+        navigator.patch
+	crashmonitor.patch
+        compiler.patch)
+sha256sums=('SKIP'
+	    '88f945fab8ea2b013310063c7026503f1c50c80afca19c1aa90f28ad3fa567f3'
+	    '706235e250ee77904838af6005c01b50374577d19a87246b739a869072f3d378'
+	    '83042f7c9deb8568c05769d1cbc9076a39bb70308c9358722a76140419239ac2' 
+	    '7c4ec412c47ff98731c99b2f6d9499fab56e0d4ddb03ee49c8b87903c0640767')
+
+# Helper macros to help make tasks easier #
+apply_patch_with_msg() {
+  for _patch in "$@"
+  do
+    msg2 "Applying ${_patch}"
+    patch -Nbp1 -i "${srcdir}/${_patch}"
+  done
+}
+
+prepare() {
+  cd "${srcdir}"
+  apply_patch_with_msg \
+    proxy.patch \
+    navigator.patch \
+    crashmonitor.patch \
+    compiler.patch
+}
+
+
+build() {
+  mkdir -p "${srcdir}/build-${MSYSTEM}" && cd "${srcdir}/build-${MSYSTEM}"
+
+  MSYS2_ARG_CONV_EXCL="-DCMAKE_INSTALL_PREFIX=" \
+  "${MINGW_PREFIX}"/bin/cmake.exe \
+    -GNinja \
+    -DCMAKE_INSTALL_PREFIX="${MINGW_PREFIX}" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_OSG_PLUGINS_BY_DEFAULT=0 \
+    -DBUILD_OSG_PLUGIN_OSG=1 \
+    -DBUILD_OSG_PLUGIN_DAE=1 \
+    -DBUILD_OSG_PLUGIN_DDS=1 \
+    -DBUILD_OSG_PLUGIN_TGA=1 \
+    -DBUILD_OSG_PLUGIN_BMP=1 \
+    -DBUILD_OSG_PLUGIN_JPEG=1 \
+    -DBUILD_OSG_PLUGIN_PNG=1 \
+    -DBUILD_OSG_PLUGIN_FREETYPE=1 \
+    -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 \
+    -DOPENMW_LTO_BUILD=1 \
+    ../${_realname}-${pkgver}
+
+  "${MINGW_PREFIX}"/bin/cmake.exe --build .
+  cmake ../ 
+    -GNinja 
+}
+
+package() {
+  DESTDIR="${pkgdir}" "${MINGW_PREFIX}"/bin/cmake.exe --install . 
+}

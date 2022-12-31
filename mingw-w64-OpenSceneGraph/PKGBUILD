@@ -1,0 +1,153 @@
+# Maintainer: Alexey Pavlov <alexpux@gmail.com>
+
+_realname=OpenSceneGraph
+_wx_basever=3.0
+pkgbase=mingw-w64-${_realname}
+pkgname=("${MINGW_PACKAGE_PREFIX}-${_realname}" "${MINGW_PACKAGE_PREFIX}-${_realname}-debug")
+_pkgver=3.6.5
+pkgver=${_pkgver//-/}
+pkgrel=20
+arch=('any')
+mingw_arch=('mingw32' 'mingw64' 'ucrt64' 'clang64' 'clang32')
+url="http://www.openscenegraph.org/"
+license=("spdx:LGPL-2.1-only WITH WxWindows-exception-3.1")
+makedepends=("${MINGW_PACKAGE_PREFIX}-cc"
+             "${MINGW_PACKAGE_PREFIX}-cmake"
+             "${MINGW_PACKAGE_PREFIX}-ninja"
+             "${MINGW_PACKAGE_PREFIX}-cyrus-sasl"
+             "${MINGW_PACKAGE_PREFIX}-wxwidgets${_wx_basever}-msw")
+depends=("${MINGW_PACKAGE_PREFIX}-boost"
+         "${MINGW_PACKAGE_PREFIX}-collada-dom"
+#         "${MINGW_PACKAGE_PREFIX}-curl"
+#         "${MINGW_PACKAGE_PREFIX}-dcmtk"
+         "${MINGW_PACKAGE_PREFIX}-ffmpeg"
+#         "${MINGW_PACKAGE_PREFIX}-fltk"
+         "${MINGW_PACKAGE_PREFIX}-freetype"
+#         "${MINGW_PACKAGE_PREFIX}-gcc-libs"
+#         "${MINGW_PACKAGE_PREFIX}-gdal"
+#         "${MINGW_PACKAGE_PREFIX}-giflib"
+#         "${MINGW_PACKAGE_PREFIX}-gstreamer"
+#         "${MINGW_PACKAGE_PREFIX}-gtk2"
+#         "${MINGW_PACKAGE_PREFIX}-gtkglext"
+#         "${MINGW_PACKAGE_PREFIX}-jasper"
+         "${MINGW_PACKAGE_PREFIX}-libjpeg"
+         "${MINGW_PACKAGE_PREFIX}-libpng"
+#         "${MINGW_PACKAGE_PREFIX}-libtiff"
+#         "${MINGW_PACKAGE_PREFIX}-libvncserver"
+         "${MINGW_PACKAGE_PREFIX}-libxml2"
+#         "${MINGW_PACKAGE_PREFIX}-lua"
+#         "${MINGW_PACKAGE_PREFIX}-opencascade"
+#         "${MINGW_PACKAGE_PREFIX}-openexr"
+#         "${MINGW_PACKAGE_PREFIX}-SDL"
+         "${MINGW_PACKAGE_PREFIX}-SDL2"
+#         "${MINGW_PACKAGE_PREFIX}-poppler"
+#         "${MINGW_PACKAGE_PREFIX}-python"
+#         "${MINGW_PACKAGE_PREFIX}-wxwidgets${_wx_basever}-msw-libs"
+         "${MINGW_PACKAGE_PREFIX}-zlib")
+options=('staticlibs' 'strip')
+source=(https://github.com/OpenMW/osg/archive/refs/tags/${_realname}-${_pkgver}.tar.gz
+        find-freetype.patch
+        additional-gl-header.patch
+        add-gstreamer-cflags.patch
+        las-link-with-boost.patch
+        # https://github.com/openscenegraph/OpenSceneGraph/pull/1055
+        backport-1055.patch
+        # https://github.com/openscenegraph/OpenSceneGraph/pull/977
+        backport-977.patch
+        # https://github.com/openscenegraph/OpenSceneGraph/pull/1144
+        0008-opencascade-7.6.0.patch
+        # https://github.com/gentoo/gentoo/blob/master/dev-games/openscenegraph/files/openscenegraph-3.6.5-openexr3.patch
+        openscenegraph-3.6.5-openexr3.patch
+        )
+sha256sums=('0bc42b60584a8b3bafdec65d401dad3fbca4b398cd715550647608c3d9343f43'
+            '3c7469cf0741905f2c46e4632159220213532d8f194b711b0600b50ad94ab4f8'
+            '76eafa53bfc4bb9e0260bf1835622e46210b61cf244a0440beceed9969eeaca7'
+            'feb994964fe636e4591394a4c287d27d54cf61c8e5fc5324aebb161cafe2e3dc'
+            '54457dcee1cdd1c486607640e4e0272e619f445291ec4edd04dda99e3c4eb4f7'
+            '108bc2ab77959b007dbe5a28be4d06bce364959c89d142a02870f6de466af9bb'
+            'a70765ce5e4493e9047b33ab89f322a5d6145649d700e5f6a89e84db7880ecb7'
+            '0413b3244e91ca7664bd6d6c2a646fae6adb126b181d484eea41a4b7346d1078'
+            '7dd35b920e95a7b0de0c14dee59b28f2a279bfdb8f4971e94395e51a4be9bad9')
+
+apply_patch_with_msg() {
+  for _patch in "$@"
+  do
+    msg2 "Applying $_patch"
+    patch -Np1 -i "${srcdir}/$_patch"
+  done
+}
+
+prepare() {
+  cd "${srcdir}/osg-${_realname}-${_pkgver}"
+
+  apply_patch_with_msg \
+    find-freetype.patch \
+    additional-gl-header.patch \
+    add-gstreamer-cflags.patch \
+    las-link-with-boost.patch \
+    backport-1055.patch \
+    backport-977.patch \
+    0008-opencascade-7.6.0.patch \
+    openscenegraph-3.6.5-openexr3.patch
+}
+
+build() {
+  export FREETYPE_DIR=${MINGW_PREFIX}
+
+  for builddir in {Release,Debug}-${MSYSTEM}; do
+    [[ -d ${builddir} ]] && rm -rf ${builddir}
+    mkdir -p ${builddir}
+    pushd ${builddir}
+      local _opts="-DBUILD_OSG_PLUGINS_BY_DEFAULT=0 -DBUILD_OSG_PLUGIN_OSG=1 -DBUILD_OSG_PLUGIN_DAE=1 -DBUILD_OSG_PLUGIN_DDS=1 -DBUILD_OSG_PLUGIN_TGA=1 -DBUILD_OSG_PLUGIN_BMP=1 -DBUILD_OSG_PLUGIN_JPEG=1 -DBUILD_OSG_PLUGIN_PNG=1 -DBUILD_OSG_PLUGIN_FREETYPE=1 -DBUILD_OSG_DEPRECATED_SERIALIZERS=0"
+
+      msg "Building ${builddir%-${MSYSTEM}} version..."
+
+      MSYS2_ARG_CONV_EXCL="-DCMAKE_INSTALL_PREFIX=" \
+      COLLADA_DIR="${MINGW_PREFIX}/include/collada-dom2.5" \
+      "${MINGW_PREFIX}"/bin/cmake.exe -Wno-dev \
+        -GNinja \
+        -DCMAKE_INSTALL_PREFIX="${MINGW_PREFIX}" \
+        -DCMAKE_BUILD_TYPE=${builddir%-${MSYSTEM}} \
+        -DwxWidgets_CONFIG_EXECUTABLE=${MINGW_PREFIX}/bin/wx-config-${_wx_basever} \
+        ${_opts} \
+        ../osg-${_realname}-${_pkgver}
+
+      "${MINGW_PREFIX}"/bin/cmake.exe --build .
+    popd
+  done
+}
+
+package_OpenSceneGraph() {
+  pkgdesc="Open source high performance 3D graphics toolkit (mingw-w64)"
+
+  cd Release-${MSYSTEM}
+  DESTDIR="${pkgdir}" "${MINGW_PREFIX}"/bin/cmake.exe --install .
+
+  install -Dm644 "${srcdir}"/osg-${_realname}-${_pkgver}/LICENSE.txt "${pkgdir}${MINGW_PREFIX}"/share/licenses/${_realname}/LICENSE
+}
+
+package_OpenSceneGraph-debug() {
+  depends=("${MINGW_PACKAGE_PREFIX}-${_realname}=${pkgver}")
+  options=('staticlibs' '!strip')
+  pkgdesc="Open source high performance 3D graphics toolkit (debug) (mingw-w64)"
+
+  cd Debug-${MSYSTEM}
+  DESTDIR="${pkgdir}" "${MINGW_PREFIX}"/bin/cmake.exe --install .
+
+  rm -rf "${pkgdir}${MINGW_PREFIX}"/include
+  rm -rf "${pkgdir}${MINGW_PREFIX}"/lib/pkgconfig
+  rm -rf "${pkgdir}${MINGW_PREFIX}"/share
+
+  install -Dm644 "${srcdir}"/osg-${_realname}-${_pkgver}/LICENSE.txt "${pkgdir}${MINGW_PREFIX}"/share/licenses/${_realname}-debug/LICENSE
+}
+
+# template start; name=mingw-w64-splitpkg-wrappers; version=1.0;
+# vim: set ft=bash :
+
+# generate wrappers
+for _name in "${pkgname[@]}"; do
+  _short="package_${_name#${MINGW_PACKAGE_PREFIX}-}"
+  _func="$(declare -f "${_short}")"
+  eval "${_func/#${_short}/package_${_name}}"
+done
+# template end;

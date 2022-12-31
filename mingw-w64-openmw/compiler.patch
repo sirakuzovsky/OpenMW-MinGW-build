@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3ee7f3a13..9d679af87 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -28,6 +28,8 @@ endif()
+ project(OpenMW)
+ 
+ set(CMAKE_CXX_STANDARD 20)
++set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std=gnu++2b")
++set(CMAKE_CXX_STANDARD_COMPILE_OPTION "-std=gnu++2b")
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ set(CMAKE_CXX_EXTENSIONS OFF)
+ 

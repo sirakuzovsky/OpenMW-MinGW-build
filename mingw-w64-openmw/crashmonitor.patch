@@ -1,0 +1,42 @@
+diff --git a/components/crashcatcher/windows_crashmonitor.cpp b/components/crashcatcher/windows_crashmonitor.cpp
+index 818951535..2c07bebfc 100644
+--- a/components/crashcatcher/windows_crashmonitor.cpp
++++ b/components/crashcatcher/windows_crashmonitor.cpp
+@@ -28,7 +28,7 @@ namespace Crash
+         if (user32Handle == nullptr)
+             return nullptr;
+ 
+-        return reinterpret_cast<IsHungAppWindowFn>(GetProcAddress(user32Handle, "IsHungAppWindow"));
++        //TODO: not compile:  return reinterpret_cast<IsHungAppWindowFn>(GetProcAddress(user32Handle, "IsHungAppWindow"));
+     }
+ 
+     static const IsHungAppWindowFn sIsHungAppWindow = getIsHungAppWindow();
+@@ -251,8 +251,8 @@ namespace Crash
+                 MINIDUMP_TYPE DumpType, PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam,
+                 PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam, PMINIDUMP_CALLBACK_INFORMATION CallbackParam);
+ 
+-            MiniDumpWirteDumpFn miniDumpWriteDump = (MiniDumpWirteDumpFn)GetProcAddress(dbghelp, "MiniDumpWriteDump");
+-            if (miniDumpWriteDump == NULL)
++            //TODO: not compile:  MiniDumpWirteDumpFn miniDumpWriteDump = (MiniDumpWirteDumpFn)GetProcAddress(dbghelp, "MiniDumpWriteDump");
++            //TODO: not compile:  if (miniDumpWriteDump == NULL)
+                 return;
+ 
+             std::wstring utf16Path = utf8ToUtf16(mShm->mStartup.mLogFilePath);
+@@ -277,7 +277,7 @@ namespace Crash
+             infos.ExceptionPointers = &exp;
+             infos.ClientPointers = FALSE;
+             MINIDUMP_TYPE type = (MINIDUMP_TYPE)(MiniDumpWithDataSegs | MiniDumpWithHandleData);
+-            miniDumpWriteDump(mAppProcessHandle, processId, hCrashLog, type, &infos, 0, 0);
++            //TODO: not compile:  miniDumpWriteDump(mAppProcessHandle, processId, hCrashLog, type, &infos, 0, 0);
+         }
+         catch (const std::exception& e)
+         {
+@@ -304,7 +304,7 @@ namespace Crash
+                 mFreezeAbort = true;
+         });
+ 
+-        mFreezeMessageBoxThreadId = GetThreadId(messageBoxThread.native_handle());
++        //TODO: not compile:  mFreezeMessageBoxThreadId = GetThreadId(messageBoxThread.native_handle());
+         messageBoxThread.detach();
+     }
+ 

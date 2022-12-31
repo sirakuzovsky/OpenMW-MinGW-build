@@ -1,0 +1,71 @@
+# Maintainer: Karl-Felix Glatzer <karl.glatzer@gmx.de>
+_realname=mygui
+pkgbase=mingw-w64-${_realname}
+pkgname=("${MINGW_PACKAGE_PREFIX}-${_realname}")
+pkgver=3.4.1
+pkgrel=1
+pkgdesc="A multilayer and overlappable GUI System (mingw-w64)"
+arch=('any')
+url="http://mygui.info/"
+license=('LGPL')
+options=(!strip !buildflags staticlibs)
+source=("https://github.com/MyGUI/mygui/archive/MyGUI${pkgver}.tar.gz")
+sha512sums=('9d36272345b1a755db88848c8a0919feb6f8ae09d048efa3b8ed833bb5ddb9c65e1e7e0d26ad39eecd2a4de53fb654f4099c555e9ebd21ce9541a1a74580ef05')
+_architectures="x86_64-w64-mingw32"
+
+build() {
+  mkdir -p ${srcdir}/build-static-${MSYSTEM} && cd ${srcdir}/build-static-${MSYSTEM}
+  unset LDFLAGS CXXFLAGS
+  MSYS2_ARG_CONV_EXCL="-DCMAKE_INSTALL_PREFIX=" \
+  "${MINGW_PREFIX}"/bin/cmake.exe \
+    -GNinja \
+    -DCMAKE_INSTALL_PREFIX=${MINGW_PREFIX} \
+    -DMYGUI_INSTALL_TOOLS=FALSE \
+    -DMYGUI_INSTALL_DOCS=FALSE \
+    -DMYGUI_INSTALL_MEDIA=FALSE \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DMYGUI_BUILD_DEMOS=OFF \
+    -DMYGUI_BUILD_TOOLS=OFF \
+    -DMYGUI_BUILD_PLUGINS=OFF \
+    -DMYGUI_RENDERSYSTEM=1 \
+    -DMYGUI_STATIC=TRUE \
+    ../mygui-MyGUI${pkgver}
+
+  "${MINGW_PREFIX}"/bin/cmake.exe --build .
+
+  [[ -d "${srcdir}/build-${MSYSTEM}" ]] && rm -rf "${srcdir}/build-${MSYSTEM}"
+
+  mkdir -p "${srcdir}/build-${MSYSTEM}" && cd "${srcdir}/build-${MSYSTEM}"
+
+  MSYS2_ARG_CONV_EXCL="-DCMAKE_INSTALL_PREFIX=" \
+  "${MINGW_PREFIX}"/bin/cmake.exe \
+    -GNinja \
+    -DCMAKE_INSTALL_PREFIX="${MINGW_PREFIX}" \
+    -DMYGUI_INSTALL_TOOLS=FALSE \
+    -DMYGUI_INSTALL_DOCS=FALSE \
+    -DMYGUI_INSTALL_MEDIA=FALSE \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DMYGUI_BUILD_DEMOS=OFF \
+    -DMYGUI_BUILD_TOOLS=OFF \
+    -DMYGUI_BUILD_PLUGINS=OFF \
+    -DMYGUI_RENDERSYSTEM=1 \
+    ../mygui-MyGUI${pkgver}
+
+  "${MINGW_PREFIX}"/bin/cmake.exe --build .
+}
+
+package() {
+   cd "${srcdir}/build-static-${MSYSTEM}"
+   DESTDIR="${pkgdir}" "${MINGW_PREFIX}"/bin/cmake.exe --install .
+
+   cd "${srcdir}/build-${MSYSTEM}"
+   DESTDIR="${pkgdir}" "${MINGW_PREFIX}"/bin/cmake.exe --install .
+
+   mv ${pkgdir}${MINGW_PREFIX}/bin/Release/*.dll ${pkgdir}${MINGW_PREFIX}/bin/
+   mv ${pkgdir}${MINGW_PREFIX}/lib/Release/*.a ${pkgdir}${MINGW_PREFIX}/lib/
+   rmdir ${pkgdir}${MINGW_PREFIX}/bin/Release
+   rmdir ${pkgdir}${MINGW_PREFIX}/lib/Release
+
+}
+
+# vim:set ts=2 sw=2 et:

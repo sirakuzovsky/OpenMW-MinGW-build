@@ -1,0 +1,12 @@
+diff --git a/components/detournavigator/navigator.hpp b/components/detournavigator/navigator.hpp
+index acec28795..8e32bf2c3 100644
+--- a/components/detournavigator/navigator.hpp
++++ b/components/detournavigator/navigator.hpp
+@@ -11,6 +11,7 @@
+ #include "waitconditiontype.hpp"
+ 
+ #include <components/resource/bulletshape.hpp>
++#include <cassert>
+ 
+ namespace ESM
+ {
