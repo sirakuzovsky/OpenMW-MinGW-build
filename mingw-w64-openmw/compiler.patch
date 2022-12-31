@@ -1,7 +1,6 @@
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 3ee7f3a13..9d679af87 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
+diff -urN openmw-master/CMakeLists.txt.orig openmw-master/CMakeLists.txt
+--- openmw-master/CMakeLists.txt.orig
++++ openmw-master/CMakeLists.txt
 @@ -28,6 +28,8 @@ endif()
  project(OpenMW)
  

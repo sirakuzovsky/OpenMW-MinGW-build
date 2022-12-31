@@ -1,7 +1,6 @@
-diff --git a/components/crashcatcher/windows_crashmonitor.cpp b/components/crashcatcher/windows_crashmonitor.cpp
-index 818951535..2c07bebfc 100644
---- a/components/crashcatcher/windows_crashmonitor.cpp
-+++ b/components/crashcatcher/windows_crashmonitor.cpp
+diff -urN openmw-master/components/crashcatcher/windows_crashmonitor.cpp.orig openmw-master/components/crashcatcher/windows_crashmonitor.cpp
+--- openmw-master/components/crashcatcher/windows_crashmonitor.cpp.orig
++++ openmw-master/components/crashcatcher/windows_crashmonitor.cpp
 @@ -28,7 +28,7 @@ namespace Crash
          if (user32Handle == nullptr)
              return nullptr;

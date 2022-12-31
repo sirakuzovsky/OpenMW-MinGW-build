@@ -61,14 +61,15 @@ makedepends=()
 options=()
 source=(https://github.com/OpenMW/openmw/archive/refs/heads/master.zip
 	proxy.patch
-        navigator.patch
+    navigator.patch
 	crashmonitor.patch
-        compiler.patch)
+    compiler.patch)
 sha256sums=('SKIP'
-	    '88f945fab8ea2b013310063c7026503f1c50c80afca19c1aa90f28ad3fa567f3'
-	    '706235e250ee77904838af6005c01b50374577d19a87246b739a869072f3d378'
-	    '83042f7c9deb8568c05769d1cbc9076a39bb70308c9358722a76140419239ac2' 
-	    '7c4ec412c47ff98731c99b2f6d9499fab56e0d4ddb03ee49c8b87903c0640767')
+'e6b5a8acbef36d565dead481ea5f11485fe16d0770d79463e31d24eedeca1ed1'
+'ccef5ffb4fbcb3964671d3d716b34e2771835d730c45255a94aaa9f206cc04c6'
+'e4b044a00853bcdbdb65714f05179e7060d839c0149a3fb40d66eebf093b4e1d'
+'61eed923540e76f64e9a09ab81352d6d9464d2b2daff071c4f93ba3c66a6c84d'
+            )
 
 # Helper macros to help make tasks easier #
 apply_patch_with_msg() {
@@ -80,7 +81,8 @@ apply_patch_with_msg() {
 }
 
 prepare() {
-  cd "${srcdir}"
+  cd "${srcdir}/${_realname}-master"
+  pwd
   apply_patch_with_msg \
     proxy.patch \
     navigator.patch \
@@ -108,7 +110,7 @@ build() {
     -DBUILD_OSG_PLUGIN_FREETYPE=1 \
     -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 \
     -DOPENMW_LTO_BUILD=1 \
-    ../${_realname}-${pkgver}
+    ../${_realname}-master
 
   "${MINGW_PREFIX}"/bin/cmake.exe --build .
   cmake ../ 

@@ -1,7 +1,6 @@
-diff --git a/CI/before_script.msvc.sh b/CI/before_script.msvc.sh
-index 57e31c789..54059d9df 100644
---- a/CI/before_script.msvc.sh
-+++ b/CI/before_script.msvc.sh
+diff -urN  openmw-master/CI/before_script.msvc.sh.orig openmw-master/CI/before_script.msvc.sh
+--- openmw-master/CI/before_script.msvc.sh.orig
++++ openmw-master/CI/before_script.msvc.sh
 @@ -917,7 +917,8 @@ printf "Qt ${QT_VER}... "
  		mkdir Qt
  		cd Qt
