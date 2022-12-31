@@ -1,6 +1,10 @@
 /.idea/
 /*/*.tar.bz2
+/*/*.tar.gz
 /*/*.log
 /*/*.lnk
 /*/src/
 /*/pkg/
+/*/*.tar.zst
+/*/*.part
+/*/*.zip
